@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+data/
+notebooks/
+download/
+*.bak.*
+benchmark_*.json
+DIAGNOSTIC.md
+show_chunks.py
+docs/

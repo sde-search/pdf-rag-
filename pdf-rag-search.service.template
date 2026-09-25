@@ -1,0 +1,15 @@
+[Unit]
+Description=pdf-rag search server (persistent ChromaDB+BM25+FlashRank)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=__INSTALL_DIR__/.venv/bin/python __INSTALL_DIR__/src/search_server.py 11436
+WorkingDirectory=__INSTALL_DIR__
+Restart=on-failure
+RestartSec=5
+Environment="PYTHONUNBUFFERED=1"
+
+[Install]
+WantedBy=default.target
