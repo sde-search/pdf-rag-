@@ -1,15 +1,7 @@
-# pdf-rag — Hybrid RAG search service
+# pdf-rag — Гибридный RAG-поиск по документам
 
-Готовый к развёртыванию пакет гибридного поиска:
-векторный (ChromaDB + nomic-embed-text) + BM25 + FlashRank reranker + фильтр по продукту.
-Все операции доступны через HTTP-эндпоинты — shell не требуется.
-
-## Включает
-- Индексы ChromaDB + BM25 (готовые, предварительно наполненные)
-- Исходные документы (PDF, DOCX, PPTX)
-- HTTP-сервер поиска (FastAPI, порт 11436)
-- Скрипт индексации (полная и инкрементальная)
-- Полную инструкцию (INSTRUCTIONS.md)
+Векторный поиск (ChromaDB + Ollama) + BM25 + FlashRank reranker + фильтр по продукту.  
+Всё локально, без облаков. Все операции через HTTP-эндпоинты.
 
 ## Быстрый старт
 
@@ -19,71 +11,60 @@ chmod +x setup.sh
 ./setup.sh --systemd  # то же + установка systemd-сервиса
 ```
 
-Сервер встанет на порту 11436.
+Перед запуском положи свои PDF, DOCX, PPTX в `pdf-rag/data/pdfs/`.
 
-## Поиск
+Сервер встанет на порту 11436. После первого запуска проиндексируй документы:
 
-```bash
-# базовый
-curl 'http://localhost:11436/search?query=ваш+запрос'
-
-# с фильтром по продукту
-curl 'http://localhost:11436/search?query=ваш+запрос&product=Название+продукта'
-
-# больше результатов
-curl 'http://localhost:11436/search?query=запрос&k=20'
-```
-
-## Добавление документов (через HTTP)
-
-### Загрузка файла
-```bash
-curl -X POST http://localhost:11436/upload \
-  -F "file=@/путь/к/файлу.pdf"
-```
-Проверка дубликата по SHA256 — если файл уже есть, вернёт 409.
-
-### Инкрементальная индексация
-```bash
-curl -X POST http://localhost:11436/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"product": "Название", "summary": "Описание"}'
-```
-Индекс перезагружается автоматически.
-
-### Полная переиндексация (CLI)
 ```bash
 cd pdf-rag && .venv/bin/python src/ingestion_hybrid.py \
     --product "Название продукта" \
     --summary "Краткое описание"
 ```
 
-## Валидация ответа
+## Поиск
 
 ```bash
-curl -X POST http://localhost:11436/validate \
-  -H "Content-Type: application/json" \
-  -d '{"query": "вопрос", "response": "ответ агента"}'
+curl 'http://localhost:11436/search?query=ваш+запрос'
+curl 'http://localhost:11436/search?query=запрос&product=Название+продукта'
+curl 'http://localhost:11436/search?query=запрос&k=20'
 ```
 
-## Список файлов и статус
+## Добавление документов
 
+Через HTTP:
 ```bash
-curl http://localhost:11436/files      # проиндексированные файлы
-curl http://localhost:11436/status     # статистика индекса
-curl http://localhost:11436/info       # описание системы
+curl -X POST http://localhost:11436/upload -F "file=@/путь/к/файлу.pdf"
+curl -X POST http://localhost:11436/ingest \
+  -H "Content-Type: application/json" \
+  -d '{"product": "Название", "summary": "Описание"}'
+```
+
+## Структура репозитория
+
+```
+pdf-rag/
+├── src/
+│   ├── search_server.py      # HTTP-сервер (FastAPI, порт 11436)
+│   ├── hybrid_search.py      # библиотека поиска (ChromaDB + BM25 + FlashRank)
+│   └── ingestion_hybrid.py   # скрипт индексации
+├── scripts/                  # вспомогательные скрипты
+├── data/                     # создаётся при установке — сюда класть документы
+├── setup.sh                  # установка зависимостей
+├── INSTRUCTIONS.md           # полная документация
+├── REQUIREMENTS.txt          # зависимости Python
+└── pdf-rag-search.service.template  # шаблон systemd-сервиса
 ```
 
 ## Требования
+
 - Python 3.13+
-- Ollama с моделью nomic-embed-text (ставится автоматически)
-- ~500 MB свободного места + место под файлы
+- Ollama с моделью `nomic-embed-text` (скачивается автоматически при установке)
+- ~500 MB + место под твои документы и индексы
 
 ## Технические детали
-- Коллекция ChromaDB: `docs`
-- Чанкование: 768 слов, overlap 128, разделение по `[.!?]`
+
 - Поиск: ChromaDB (n_results=30) + BM25 (n_results=30) → RRF fusion → FlashRank reranker
 - Эмбеддинги: nomic-embed-text через Ollama, метрика cosine
-- Дедупликация: SHA256+mtime (проверка при загрузке + при инкрементальной индексации)
-- Метаданные чанка: source, product, summary
-- Сервер: FastAPI + uvicorn, порт 11436, все операции через эндпоинты
+- Чанкование: 768 слов, overlap 128
+- Дедупликация по SHA256 при загрузке
+- Все операции доступны через HTTP — shell не требуется
