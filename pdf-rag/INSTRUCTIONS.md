@@ -32,6 +32,23 @@ pdf-rag/
 └── INSTRUCTIONS.md     # этот файл
 ```
 
+## Переменные окружения (все опциональны, есть fallback)
+
+| Переменная | По умолчанию | Что задаёт |
+|---|---|---|
+| `CORS_ORIGINS` | `*` (все) | Разрешённые origin через запятую, напр. `http://site1.com,http://site2.com` |
+| `RAG_EMBED_MODEL` | `nomic-embed-text` | Модель эмбеддингов в Ollama |
+| `RAG_OLLAMA_URL` | `http://localhost:11434` | Адрес Ollama для эмбеддингов |
+| `RAG_LLM_MODEL` | `qwen3:8b` | Модель для генерации ответа (через `/v1/chat/completions`) |
+| `RAG_LLM_ENDPOINT` | `http://localhost:11434/v1/chat/completions` | Полный URL OpenAI-совместимого API для LLM |
+| `FLASHRANK_CACHE_DIR` | `~/.cache/flashrank` | Папка кэша FlashRank-модели |
+
+Пример `.env` или export перед запуском:
+```bash
+export CORS_ORIGINS="http://localhost:11436,http://10.66.66.2:8080"
+export RAG_EMBED_MODEL=bge-m3
+```
+
 ## Зависимости и среда
 
 ### Обязательно
@@ -263,7 +280,7 @@ CLI-доступ агенту не нужен. Достаточно разреш
 - **BM25:** сериализуется в pickle-файл `bm25_data.pkl` (содержит documents, metadatas, ids)
 - **Метаданные чанка:** `source` (имя файла), `product`, `summary`
 - **Дедупликация:** SHA256 + mtime, кэш в `file_hashes.json`
-- **Сервер:** FastAPI + uvicorn, порт 11436, CORS открыт
+- **Сервер:** FastAPI + uvicorn, порт 11436, CORS настраивается через `CORS_ORIGINS` (по умолчанию открыт для всех)
 - **systemd:** сервис `pdf-rag-search.service` (user), автозапуск
 
 ## Эндпоинты сервера (полный список)
