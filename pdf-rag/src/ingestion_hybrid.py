@@ -165,8 +165,8 @@ def index_documents(docs_dir: Path, default_product: str = "", default_summary: 
     )
 
     embed_model = OllamaEmbedding(
-        model_name="nomic-embed-text",
-        base_url="http://localhost:11434",
+        model_name=os.environ.get("RAG_EMBED_MODEL", "nomic-embed-text"),
+        base_url=os.environ.get("RAG_OLLAMA_URL", "http://localhost:11434"),
         ollama_additional_kwargs={"mirostat": 0},
     )
 
@@ -259,8 +259,8 @@ def index_incremental(product: str = "", summary: str = ""):
         )
 
     embed_model = OllamaEmbedding(
-        model_name="nomic-embed-text",
-        base_url="http://localhost:11434",
+        model_name=os.environ.get("RAG_EMBED_MODEL", "nomic-embed-text"),
+        base_url=os.environ.get("RAG_OLLAMA_URL", "http://localhost:11434"),
         ollama_additional_kwargs={"mirostat": 0},
     )
 

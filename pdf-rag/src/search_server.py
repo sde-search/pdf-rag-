@@ -67,12 +67,21 @@ def log_ingestion(event: str, **kwargs):
 
 
 app = FastAPI(title="Hybrid RAG Search")
+# — CORS: настраивается через переменную окружения CORS_ORIGINS
+#   Формат: список origin через запятую. По умолчанию — все (разрешено любому клиенту).
+#   Пример: CORS_ORIGINS="http://localhost:11436,http://10.66.66.2:8080"
+cors_origins_env = os.environ.get("CORS_ORIGINS", "*")
+if cors_origins_env == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:11436", "http://127.0.0.1:11436"],
+    allow_origins=cors_origins,
     allow_credentials=False,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # — Globals, reloaded by /reload.
@@ -95,8 +104,8 @@ def load_searcher():
         chroma_path=chroma_path,
         collection_name="docs",
         bm25_pkl_path=bm25_pkl,
-        embedding_model="nomic-embed-text",
-        ollama_base_url="http://localhost:11434",
+        embedding_model=os.environ.get("RAG_EMBED_MODEL", "nomic-embed-text"),
+        ollama_base_url=os.environ.get("RAG_OLLAMA_URL", "http://localhost:11434"),
     )
     return hs
 

@@ -56,9 +56,13 @@ class HybridSearch:
         try:
             from flashrank import Ranker
 
+            flashrank_cache = os.environ.get(
+                "FLASHRANK_CACHE_DIR",
+                str(Path.home() / ".cache" / "flashrank"),
+            )
             self.reranker = Ranker(
                 model_name="ms-marco-MiniLM-L-12-v2",
-                cache_dir="/home/hermes/.cache/flashrank",
+                cache_dir=flashrank_cache,
             )
         except Exception as e:
             print(f"  [WARN] Reranker не загружен: {e}")
@@ -213,15 +217,17 @@ def ask(query: str, top_k: int = 5) -> str:
 
 Дай точный, структурированный ответ со ссылками на источники."""
 
+    llm_model = os.environ.get("RAG_LLM_MODEL", "qwen3:8b")
+    llm_endpoint = os.environ.get("RAG_LLM_ENDPOINT", "http://localhost:11434/v1/chat/completions")
     payload = {
-        "model": "/home/hermes/llama-build/qwen3-hermes-14b.Q6_K.gguf",
+        "model": llm_model,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.1,
         "max_tokens": 1024,
     }
 
     with httpx.Client(timeout=120.0) as client:
-        resp = client.post("http://localhost:11435/v1/chat/completions", json=payload)
+        resp = client.post(llm_endpoint, json=payload)
         resp.raise_for_status()
         answer = resp.json()["choices"][0]["message"]["content"]
 
