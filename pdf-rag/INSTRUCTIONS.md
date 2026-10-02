@@ -40,6 +40,7 @@ pdf-rag/
 | `RAG_EMBED_MODEL` | `nomic-embed-text` | Модель эмбеддингов в Ollama |
 | `RAG_OLLAMA_URL` | `http://localhost:11434` | Адрес Ollama для эмбеддингов |
 | `RAG_LLM_MODEL` | `qwen3:8b` | Модель для генерации ответа (через `/v1/chat/completions`) |
+| `RAG_RENDER_PAGES` | `false` (не рендерит) | Рендер страниц PDF в PNG — скриншоты каждой страницы. Включается `1/true/yes` |
 | `RAG_LLM_ENDPOINT` | `http://localhost:11434/v1/chat/completions` | Полный URL OpenAI-совместимого API для LLM |
 | `FLASHRANK_CACHE_DIR` | `~/.cache/flashrank` | Папка кэша FlashRank-модели |
 
