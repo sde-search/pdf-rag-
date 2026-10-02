@@ -42,7 +42,7 @@ pdf-rag/
 | `RAG_EMBED_MODEL` | `bge-m3` | Модель эмбеддингов в Ollama |
 | `RAG_RERANKER_MODEL` | `BAAI/bge-reranker-v2-m3` | Модель реранжинга (CrossEncoder, GPU) |
 | `RAG_OLLAMA_URL` | `http://localhost:11434` | Адрес Ollama для эмбеддингов |
-| `RAG_LLM_MODEL` | `qwen3:8b` | Модель для генерации ответа (через `/v1/chat/completions`) |
+|| `RAG_RENDER_PAGES` | `false` (не рендерит) | Рендер страниц PDF в PNG (`1/true/yes`) — скриншоты каждой страницы в `data/extracted/{source_stem}/page{N}.png`. Доступно через `/extracted/` |
 | `RAG_LLM_ENDPOINT` | `http://localhost:11434/v1/chat/completions` | Полный URL OpenAI-совместимого API для LLM |
 | `FLASHRANK_CACHE_DIR` | `~/.cache/flashrank` | (не используется с bge-reranker-v2-m3)
 
@@ -283,7 +283,7 @@ CLI-доступ агенту не нужен. Достаточно разреш
 - **Коллекция ChromaDB:** по умолчанию называется `docs`
 - **BM25:** сериализуется в pickle-файл `bm25_data.pkl` (содержит documents, metadatas, ids)
 - **Метаданные чанка:** `source` (имя файла), `product`, `summary`, `page_number`
-- **Изображения страниц:** при индексации извлекаются скриншоты страниц PDF в `data/extracted/`, доступны через `/extracted/{source_stem}/page{N}.png`. В результатах поиска возвращается поле `images`
+- **Изображения страниц:** при индексации извлекаются скриншоты страниц PDF в `data/extracted/`, доступны через `/extracted/{source_stem}/page{N}.png`. Отключено по умолчанию, включается переменной `RAG_RENDER_PAGES=true`. В результатах поиска возвращается поле `images`
 - **Дедупликация:** SHA256 + mtime, кэш в `file_hashes.json`
 - **Сервер:** FastAPI + uvicorn, порт 11436, CORS настраивается через `CORS_ORIGINS` (по умолчанию открыт для всех)
 - **systemd:** сервис `pdf-rag-search.service` (user), автозапуск

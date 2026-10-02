@@ -107,12 +107,13 @@ def render_pdf_pages(path: Path, source_stem: str) -> int:
 
 
 def extract_text_pagewise(path: Path, source_stem: str) -> list[dict]:
-    """Извлекает текст постранично и картинки.
+    """Извлекает текст постранично и картинки (если RAG_RENDER_PAGES=true).
     Возвращает список: [{text, page_number}, ...] для каждой страницы с текстом."""
     import fitz
 
-    # Сначала рендер страниц
-    render_pdf_pages(path, source_stem)
+    # Рендер страниц в PNG — только если явно включено
+    if os.environ.get("RAG_RENDER_PAGES", "").lower() in ("1", "true", "yes"):
+        render_pdf_pages(path, source_stem)
 
     doc = fitz.open(str(path))
     pages = []
