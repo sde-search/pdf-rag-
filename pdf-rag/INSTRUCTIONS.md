@@ -278,11 +278,12 @@ CLI-доступ агенту не нужен. Достаточно разреш
 ## Технические детали
 
 - **Чанкование текста:** 768 слов, overlap 128, разделение по границам предложений `[.!?]`
-- **Поиск:** ChromaDB (n_results=30) + BM25 (n_results=30) → RRF fusion (константа 60) → FlashRank reranker → сортировка по rerank_score
-- **Эмбеддинги:** `nomic-embed-text` через Ollama, метрика cosine
+- **Поиск:** ChromaDB (n_results=30) + BM25 (n_results=30) → RRF fusion (константа 60) → bge-reranker-v2-m3 (GPU) → сортировка по rerank_score
+- **Эмбеддинги:** `bge-m3` через Ollama, метрика cosine, с `doc:` и `query:` префиксами
 - **Коллекция ChromaDB:** по умолчанию называется `docs`
 - **BM25:** сериализуется в pickle-файл `bm25_data.pkl` (содержит documents, metadatas, ids)
-- **Метаданные чанка:** `source` (имя файла), `product`, `summary`
+- **Метаданные чанка:** `source` (имя файла), `product`, `summary`, `page_number`
+- **Изображения страниц:** при индексации извлекаются скриншоты страниц PDF в `data/extracted/`, доступны через `/extracted/{source_stem}/page{N}.png`. В результатах поиска возвращается поле `images`
 - **Дедупликация:** SHA256 + mtime, кэш в `file_hashes.json`
 - **Сервер:** FastAPI + uvicorn, порт 11436, CORS настраивается через `CORS_ORIGINS` (по умолчанию открыт для всех)
 - **systemd:** сервис `pdf-rag-search.service` (user), автозапуск
@@ -293,7 +294,8 @@ CLI-доступ агенту не нужен. Достаточно разреш
 |---|---|---|
 | GET | `/health` | Проверка сервера |
 | GET | `/status` | Статистика индекса (чанки, источники, продукты) |
-| GET | `/files` | Список проиндексированных файлов с размером |
+|| GET | `/files` | Список проиндексированных файлов с размером |
+|| GET | `/extracted/*` | Статика: скриншоты страниц PDF (из `data/extracted/`) |
 | GET | `/info` | Описание системы и список команд |
 | GET | `/search` | Поиск (?query=, &k=, &product=) |
 | POST | `/search` | Поиск (JSON-тело) |
