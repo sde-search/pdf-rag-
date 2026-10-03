@@ -77,27 +77,34 @@ def deduplicate_to_flat(target: Path = DATA_PDFS):
     return copied
 
 
-def extract_text(path: Path) -> str:
+def extract_text_pages(path: Path) -> list[tuple[str, int]]:
+    """Извлекает текст постранично. Возвращает [(text, page), ...]."""
     ext = path.suffix.lower()
     if ext == '.pdf':
         try:
             from pypdf import PdfReader
             r = PdfReader(str(path))
-            return '\n'.join(p.extract_text() or '' for p in r.pages)
+            pages = []
+            for i, p in enumerate(r.pages, 1):
+                txt = (p.extract_text() or '').strip()
+                if txt:
+                    pages.append((txt, i))
+            return pages
         except Exception as e:
             print(f"  [WARN] PDF error {path.name}: {e}")
-            return ''
+            return []
     elif ext == '.docx':
         try:
             from docx import Document
             d = Document(str(path))
-            return '\n'.join(p.text for p in d.paragraphs)
+            txt = '\n'.join(p.text for p in d.paragraphs)
+            return [(txt.strip(), 1)] if txt.strip() else []
         except Exception as e:
             print(f"  [WARN] DOCX error {path.name}: {e}")
-            return ''
+            return []
     elif ext == '.doc':
         print(f"  [SKIP] .doc (legacy format): {path.name}")
-        return ''
+        return []
     elif ext == '.pptx':
         try:
             from pptx import Presentation
@@ -107,11 +114,12 @@ def extract_text(path: Path) -> str:
                 for shape in slide.shapes:
                     if hasattr(shape, "text"):
                         texts.append(shape.text)
-            return '\n'.join(texts)
+            full = '\n'.join(texts).strip()
+            return [(full, 1)] if full else []
         except Exception as e:
             print(f"  [WARN] PPTX error {path.name}: {e}")
-            return ''
-    return ''
+            return []
+    return []
 
 
 def split_text(text: str, source_name: str) -> list[tuple[str, int]]:
@@ -184,20 +192,22 @@ def index_documents(docs_dir: Path, default_product: str = "", default_summary: 
         if f.suffix.lower() == '.zip':
             continue
         print(f"  [{i}/{total}] {f.name}")
-        text = extract_text(f)
-        if not text.strip():
+        page_data = extract_text_pages(f)
+        if not page_data:
             continue
-        chunks = split_text(text, f.name)
-        for chunk_text, chunk_id in chunks:
-            node_id = f"{f.name}_{chunk_id}"
-            all_texts.append(chunk_text)
-            all_metadatas.append({
-                "source": f.name,
-                "chunk": chunk_id,
-                "product": default_product,
-                "summary": default_summary,
-            })
-            all_ids.append(node_id)
+        for page_text, page_num in page_data:
+            chunks = split_text(page_text, f.name)
+            for chunk_text, chunk_id in chunks:
+                node_id = f"{f.name}_p{page_num}_c{chunk_id}"
+                all_texts.append(chunk_text)
+                all_metadatas.append({
+                    "source": f.name,
+                    "page": page_num,
+                    "chunk": chunk_id,
+                    "product": default_product,
+                    "summary": default_summary,
+                })
+                all_ids.append(node_id)
 
     # --- векторная индексация ---
     batch_size = 32
@@ -309,20 +319,22 @@ def index_incremental(product: str = "", summary: str = ""):
 
     for f in to_process:
         print(f"  Обработка: {f.name}")
-        text = extract_text(f)
-        if not text.strip():
+        page_data = extract_text_pages(f)
+        if not page_data:
             continue
-        chunks = split_text(text, f.name)
-        for chunk_text, chunk_id in chunks:
-            node_id = f"{f.name}_{chunk_id}"
-            new_texts.append(chunk_text)
-            new_metadatas.append({
-                "source": f.name,
-                "chunk": chunk_id,
-                "product": product,
-                "summary": summary,
-            })
-            new_ids.append(node_id)
+        for page_text, page_num in page_data:
+            chunks = split_text(page_text, f.name)
+            for chunk_text, chunk_id in chunks:
+                node_id = f"{f.name}_p{page_num}_c{chunk_id}"
+                new_texts.append(chunk_text)
+                new_metadatas.append({
+                    "source": f.name,
+                    "page": page_num,
+                    "chunk": chunk_id,
+                    "product": product,
+                    "summary": summary,
+                })
+                new_ids.append(node_id)
 
     # --- эмбеддинги и добавление в ChromaDB ---
     if new_texts:

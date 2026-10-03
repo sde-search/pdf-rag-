@@ -91,6 +91,7 @@ class HybridSearch:
                     "id": vec_results["ids"][0][i],
                     "text": vec_results["documents"][0][i],
                     "source": meta.get("source", ""),
+                    "page": meta.get("page"),
                     "product": meta.get("product", ""),
                     "score": 1 - vec_results["distances"][0][i]
                     if vec_results["distances"]
@@ -121,6 +122,7 @@ class HybridSearch:
                         "id": self.bm25_data["ids"][idx],
                         "text": self.bm25_data["documents"][idx],
                         "source": meta.get("source", ""),
+                        "page": meta.get("page"),
                         "product": prod,
                         "score": bm25_scores[idx],
                     }

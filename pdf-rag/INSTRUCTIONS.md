@@ -37,10 +37,9 @@ pdf-rag/
 | Переменная | По умолчанию | Что задаёт |
 |---|---|---|
 | `CORS_ORIGINS` | `*` (все) | Разрешённые origin через запятую, напр. `http://site1.com,http://site2.com` |
-| `RAG_EMBED_MODEL` | `nomic-embed-text` | Модель эмбеддингов в Ollama |
+| `RAG_EMBED_MODEL` | `bge-m3:latest` | Модель эмбеддингов в Ollama (1024d, мультиязычная) |
 | `RAG_OLLAMA_URL` | `http://localhost:11434` | Адрес Ollama для эмбеддингов |
 | `RAG_LLM_MODEL` | `qwen3:8b` | Модель для генерации ответа (через `/v1/chat/completions`) |
-| `RAG_RENDER_PAGES` | `false` (не рендерит) | Рендер страниц PDF в PNG — скриншоты каждой страницы. Включается `1/true/yes` |
 | `RAG_LLM_ENDPOINT` | `http://localhost:11434/v1/chat/completions` | Полный URL OpenAI-совместимого API для LLM |
 | `FLASHRANK_CACHE_DIR` | `~/.cache/flashrank` | Папка кэша FlashRank-модели |
 
@@ -54,7 +53,7 @@ export RAG_EMBED_MODEL=bge-m3
 
 ### Обязательно
 - **Python 3.13+**
-- **Ollama** с моделью эмбеддингов (`nomic-embed-text`) — порт 11434
+- **Ollama** с моделью эмбеддингов (`bge-m3:latest`) — порт 11434
 - **FlashRank** (`ms-marco-MiniLM-L-12-v2`) — ONNX, работает на CPU, ~200 MB RAM
 
 ### Пакеты Python (устанавливаются в .venv)
@@ -117,6 +116,11 @@ cd pdf-rag && .venv/bin/python src/ingestion_hybrid.py --incremental \
 **Как работает:** сверяет SHA256 и mtime файлов с кэшем `file_hashes.json`. Добавляет только то, чего нет или что изменилось. Старые чанки удаляются, новые векторизуются, BM25 перестраивается из актуальных данных ChromaDB.
 
 **Важно:** инкрементальный режим каждый раз перестраивает BM25 целиком (не дёшево, но необходимо для консистентности).
+
+### Постраничная индексация
+
+Индексация разбивает текст PDF постранично: каждый чанк содержит метаданные `page` с номером страницы.
+При поиске ответы включают `"page": N`, что позволяет агенту ссылаться на конкретные страницы документов.
 
 ### Дедупликация
 Перед индексацией файлы из `data/pdfs_raw/` копируются в `data/pdfs/` с дедупликацией по SHA256. Повторяющиеся файлы пропускаются.
@@ -276,10 +280,10 @@ CLI-доступ агенту не нужен. Достаточно разреш
 
 - **Чанкование текста:** 768 слов, overlap 128, разделение по границам предложений `[.!?]`
 - **Поиск:** ChromaDB (n_results=30) + BM25 (n_results=30) → RRF fusion (константа 60) → FlashRank reranker → сортировка по rerank_score
-- **Эмбеддинги:** `nomic-embed-text` через Ollama, метрика cosine
+- **Эмбеддинги:** `bge-m3:latest` через Ollama, метрика cosine, размерность 1024
 - **Коллекция ChromaDB:** по умолчанию называется `docs`
 - **BM25:** сериализуется в pickle-файл `bm25_data.pkl` (содержит documents, metadatas, ids)
-- **Метаданные чанка:** `source` (имя файла), `product`, `summary`
+- **Метаданные чанка:** `source` (имя файла), `page` (номер страницы), `chunk` (номер чанка), `product`, `summary`
 - **Дедупликация:** SHA256 + mtime, кэш в `file_hashes.json`
 - **Сервер:** FastAPI + uvicorn, порт 11436, CORS настраивается через `CORS_ORIGINS` (по умолчанию открыт для всех)
 - **systemd:** сервис `pdf-rag-search.service` (user), автозапуск

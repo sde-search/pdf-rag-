@@ -98,6 +98,10 @@ def load_searcher():
     bm25_pkl = str(CHROMA_DIR / "bm25_data.pkl")
 
     sys.path.insert(0, str(BASE_DIR / "src"))
+    # Принудительно перезагружаем hybrid_search (сброс кэша Python)
+    for mod in list(sys.modules.keys()):
+        if 'hybrid_search' in mod:
+            del sys.modules[mod]
     from hybrid_search import HybridSearch
 
     hs = HybridSearch(

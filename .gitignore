@@ -9,3 +9,11 @@ benchmark_*.json
 DIAGNOSTIC.md
 show_chunks.py
 docs/
+
+# Корневые плоские копии — код живёт в pdf-rag/
+src/
+scripts/
+.env
+INSTRUCTIONS.md
+REQUIREMENTS.txt
+test_pages.py
