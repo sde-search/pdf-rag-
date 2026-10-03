@@ -40,7 +40,8 @@ fi
 # 4. Установка systemd-сервиса (опционально)
 if [ "$1" == "--systemd" ]; then
     echo ">>> Установка systemd-сервиса..."
-    sed "s|/home/hermes/projects/pdf-rag|$INSTALL_DIR|g" ../pdf-rag-search.service.template > /tmp/pdf-rag-search.service
+    OLD_DEFAULT="__INSTALL_DIR__"  # заменяется на актуальный путь установки
+    sed "s|$OLD_DEFAULT|$INSTALL_DIR|g" ../pdf-rag-search.service.template > /tmp/pdf-rag-search.service
     mkdir -p ~/.config/systemd/user/
     cp /tmp/pdf-rag-search.service ~/.config/systemd/user/pdf-rag-search.service
     systemctl --user daemon-reload

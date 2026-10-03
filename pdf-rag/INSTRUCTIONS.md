@@ -45,7 +45,7 @@ pdf-rag/
 
 Пример `.env` или export перед запуском:
 ```bash
-export CORS_ORIGINS="http://localhost:11436,http://10.66.66.2:8080"
+export CORS_ORIGINS="http://localhost:11436,http://__YOUR_WG_IP__:8080"
 export RAG_EMBED_MODEL=bge-m3
 ```
 
